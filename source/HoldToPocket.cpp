@@ -176,7 +176,12 @@ namespace HoldToPocket
 				// the top the way the engine does (Perfected Wheeler's replay, measured 2026-09-13).
 				if (auto* controlMap = RE::ControlMap::GetSingleton())
 				{
-					const auto& stack = controlMap->contextPriorityStack;
+					// 1.0.2: through GetRuntimeData(), never the member directly. ControlMap's contextPriorityStack lives in
+					// CommonLibSSE-NG's RUNTIME_DATA, and this plugin builds for SE+AE with VR off, which makes the header
+					// expose the members at AE's offsets. On SE 1.5.97 the direct access read another field as the array's
+					// size and the index ran off the end - an access violation the moment a favourite was toggled
+					// (the owner, 2026-09-22; crash-2026-09-22-20-36-43.log, HoldToPocket.cpp:182).
+					const auto& stack = controlMap->GetRuntimeData().contextPriorityStack;
 					for (std::uint32_t i = stack.size(); i > 0 && name.empty(); --i)
 					{
 						name = controlMap->GetUserEventName(a_p.code, a_p.device, stack[i - 1]);
