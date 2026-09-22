@@ -7,7 +7,8 @@
   build for SE and AE with VR off gets those members laid out at AE's offsets - so on SE 1.5.97 the array's size was
   really another field, the loop indexed far past the end, and the game died on the first Y press
   (`crash-2026-09-22-20-36-43.log`, `HoldToPocket.cpp:182`). It goes through `GetRuntimeData()` now, which resolves
-  per runtime.
+  per runtime, and the walk is bounded as well: a context stack deeper than 64, or an entry that is not a context id,
+  is refused rather than indexed, so a wrong layout can never again be read as memory to walk.
 * **No Back Pocket category in the trading menu.** The point of the Back Pocket is to hold what you do not mean to
   trade, so the merchant screen now gets the filters but no category: pocketed items appear in no list there and
   cannot be sold by accident; take one out in your inventory first (the owner: *"all we really need to do is make

@@ -176,15 +176,36 @@ namespace HoldToPocket
 				// the top the way the engine does (Perfected Wheeler's replay, measured 2026-09-13).
 				if (auto* controlMap = RE::ControlMap::GetSingleton())
 				{
-					// 1.0.2: through GetRuntimeData(), never the member directly. ControlMap's contextPriorityStack lives in
+					// 1.0.1: through GetRuntimeData(), never the member directly. ControlMap's contextPriorityStack lives in
 					// CommonLibSSE-NG's RUNTIME_DATA, and this plugin builds for SE+AE with VR off, which makes the header
 					// expose the members at AE's offsets. On SE 1.5.97 the direct access read another field as the array's
 					// size and the index ran off the end - an access violation the moment a favourite was toggled
 					// (the owner, 2026-09-22; crash-2026-09-22-20-36-43.log, HoldToPocket.cpp:182).
 					const auto& stack = controlMap->GetRuntimeData().contextPriorityStack;
-					for (std::uint32_t i = stack.size(); i > 0 && name.empty(); --i)
+					// A bound as well as the accessor. The game pushes and pops a handful of input contexts, so a
+					// depth beyond kMaxContextDepth, or an entry that is not a context id, means the array was read
+					// at the wrong offset rather than that the game is in a deep context - it is refused instead of
+					// indexed, and the plain lookup below stands in. Without this the first read walked off the end
+					// (the owner, 2026-09-22: "the game crashed again after unfavoriting an item").
+					constexpr std::uint32_t kMaxContextDepth = 64;
+					const std::uint32_t depth = stack.size();
+					if (depth > kMaxContextDepth)
 					{
-						name = controlMap->GetUserEventName(a_p.code, a_p.device, stack[i - 1]);
+						static bool warnedDepth = false;
+						if (!warnedDepth)
+						{
+							warnedDepth = true;
+							logger::warn("ControlMap context stack depth {} is out of range; using the default context", depth);
+						}
+					}
+					else
+					{
+						for (std::uint32_t i = depth; i > 0 && name.empty(); --i)
+						{
+							const auto context = stack[i - 1];
+							if (context >= RE::UserEvents::INPUT_CONTEXT_ID::kTotal) { continue; }
+							name = controlMap->GetUserEventName(a_p.code, a_p.device, context);
+						}
 					}
 					if (name.empty()) { name = controlMap->GetUserEventName(a_p.code, a_p.device); }
 				}
