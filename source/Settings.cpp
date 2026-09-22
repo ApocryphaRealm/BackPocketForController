@@ -39,6 +39,14 @@ namespace settings
 			try { a_out = std::stof(Trim(a_text)); return true; } catch (...) { return false; }
 		}
 
+		bool ParseBool(const std::string& a_text, bool& a_out)
+		{
+			const std::string v = Lower(Trim(a_text));
+			if (v == "true" || v == "1") { a_out = true; return true; }
+			if (v == "false" || v == "0") { a_out = false; return true; }
+			return false;
+		}
+
 		bool ParseUInt(const std::string& a_text, std::uint32_t& a_out)
 		{
 			try { a_out = static_cast<std::uint32_t>(std::stoull(Trim(a_text), nullptr, 0)); return true; } catch (...) { return false; }
@@ -73,13 +81,18 @@ namespace settings
 		{
 			logger::warn("fHoldSeconds \"{}\" is not a number; keeping {:.2f}", it->second, general::holdSeconds);
 		}
+		if (const auto it = keys.find("brequirefavourite:general"); it != keys.end() && !ParseBool(it->second, general::requireFavourite))
+		{
+			logger::warn("bRequireFavourite \"{}\" is not true/false or 1/0; keeping {}", it->second, general::requireFavourite);
+		}
 		if (general::holdSeconds < kMinHold || general::holdSeconds > kMaxHold)
 		{
 			const float was = general::holdSeconds;
 			general::holdSeconds = std::clamp(general::holdSeconds, kMinHold, kMaxHold);
 			logger::warn("fHoldSeconds {:.2f} is outside {:.2f}-{:.2f}; using {:.2f}", was, kMinHold, kMaxHold, general::holdSeconds);
 		}
-		logger::info("settings loaded from {}: holdSeconds={:.2f} logLevel={}", iniPath, general::holdSeconds, debug::logLevel);
+		logger::info("settings loaded from {}: holdSeconds={:.2f} requireFavourite={} logLevel={}", iniPath,
+					 general::holdSeconds, general::requireFavourite, debug::logLevel);
 	}
 
 	void ApplyLogLevel()

@@ -129,6 +129,15 @@ void request_invalidate(RE::GFxMovie& movie);
   return menu_kind::none;
 }
 
+// 1.0.1 (the owner, 2026-09-22: "all we really need to do is make sure that the back pocket doesn't show up in the
+// trading menu at all. Because its whole purpose is to store items that you don't intend to trade."): the Barter menu
+// gets the FILTERS but no category. Pocketed items are then in no list a merchant can be sold from - they come out in
+// the Inventory first, deliberately - and there is no category button to draw, which also settles the icon that
+// overlapped when the side changed (borokoshow, the same day, of this mod and of Back Pocket itself).
+[[nodiscard]] bool category_belongs_in(const menu_kind menu) noexcept {
+  return menu != menu_kind::barter;
+}
+
 [[nodiscard]] std::string_view menu_name(const menu_kind menu) noexcept {
   switch (menu) {
   case menu_kind::inventory:
@@ -419,8 +428,20 @@ bool set_icon_label(RE::GFxValue& icon_art, const std::uint32_t index, const boo
   if (icon_art.GetArraySize() <= index && !icon_art.SetArraySize(index + 1)) {
     return false;
   }
-  return icon_art.SetElement(index,
-                             RE::GFxValue(custom_icon ? category_icon_label : fallback_icon_label));
+  if (!icon_art.SetElement(index,
+                           RE::GFxValue(custom_icon ? category_icon_label : fallback_icon_label))) {
+    return false;
+  }
+  // 1.0.1 (borokoshow, 2026-09-22, of this mod and of Back Pocket itself: "When trading, if I change between give and
+  // take I can see the backpocket icon overlap."): iconArt is indexed from the first player entry, and the Barter and
+  // Gift menus rebuild their category list when the side changes - with a player segment of a different length. A
+  // label written for the longer side then sat at an index belonging to another category on the shorter one, so the
+  // satchel was drawn over that category's own icon. Our entry is always the last one, so anything past it is a
+  // leftover from an earlier build of the list and is dropped.
+  if (icon_art.GetArraySize() > index + 1) {
+    static_cast<void>(icon_art.SetArraySize(index + 1));
+  }
+  return true;
 }
 
 category_installation inject_category(RE::GFxMovie& movie, const bool custom_icon) {
@@ -1052,6 +1073,22 @@ integration_result install_menu_integration_now() {
 
   runtime_state& current = state();
   const menu_kind menu = current.active_menu.load();
+  if (!category_belongs_in(menu)) {
+    current.icon_hook_installed = false;
+    current.category_installed = false;
+    current.category_index = invalid_category_index;
+    current.filter_installed = install_filters(*movie);
+    if (!current.filter_installed) {
+      logger::warn("item menu integration incomplete: menu={}, category=skipped, filters=false",
+                   menu_name(menu));
+      return integration_result::failed;
+    }
+    request_invalidate(*movie);
+    queue_footer_refresh();
+    logger::info("ITEM_MENU_INTEGRATION_READY menu={} category=skipped reason=trading_menu",
+                 menu_name(menu));
+    return integration_result::ready;
+  }
   current.icon_hook_installed = install_category_icon_hook(*movie);
   const category_installation category = inject_category(*movie, current.icon_hook_installed);
   if (category == category_installation::not_applicable) {
@@ -1214,6 +1251,9 @@ void toggle_selected_item(RE::GFxMovie& movie) {
 
 void switch_category(RE::GFxMovie& movie) {
   runtime_state& current = state();
+  if (!category_belongs_in(current.active_menu.load())) {
+    return;  // the trading menu has no Back Pocket category by design; say nothing
+  }
   if (!current.category_installed || current.category_index == invalid_category_index) {
     notify("Back Pocket category is unavailable");
     return;

@@ -160,7 +160,12 @@ namespace HoldToPocket
 			return std::format("{} (favourited={} inBackPocket={})", a_h.item, a_h.favourited, a_h.pocketed);
 		}
 
-		bool Eligible(const Highlight& a_h) { return a_h.valid && (a_h.favourited || a_h.pocketed); }
+		// 1.0.1: bRequireFavourite=false lets a hold pocket whatever is highlighted (the owner, 2026-09-22);
+		// true (the default) keeps 1.0.0's rule - favourites in, pocketed items out, everything else untouched.
+		bool Eligible(const Highlight& a_h)
+		{
+			return a_h.valid && (a_h.pocketed || a_h.favourited || !settings::general::requireFavourite);
+		}
 
 		void Splice(RE::InputEvent** a_events, const Pending& a_p, float a_value, float a_held)
 		{

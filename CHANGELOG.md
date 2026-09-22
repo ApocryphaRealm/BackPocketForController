@@ -1,4 +1,19 @@
 # Changelog - Back Pocket For Controller
+## 1.0.1 - 2026-09-22
+
+### Changed
+* **No Back Pocket category in the trading menu.** The point of the Back Pocket is to hold what you do not mean to
+  trade, so the merchant screen now gets the filters but no category: pocketed items appear in no list there and
+  cannot be sold by accident; take one out in your inventory first (the owner: *"all we really need to do is make
+  sure that the back pocket doesn't show up in the trading menu at all"*). This also removes the overlapping category
+  icon borokoshow saw when switching between give and take, which came from the list being rebuilt per side.
+* **`bRequireFavourite` in the INI** (default `true`, which is 1.0.0's behaviour): with it off, holding Y sends
+  whatever is highlighted to the Back Pocket, without favouriting it first.
+
+### Fixed
+* The category icon could be drawn over another category's in a menu that rebuilds its list with a different number
+  of player categories (the Gift menu; the Barter menu no longer has the category at all). The icon-label array is
+  trimmed to our entry, so a label left by a longer list cannot land on someone else's category.
 
 ## 1.0.0
 

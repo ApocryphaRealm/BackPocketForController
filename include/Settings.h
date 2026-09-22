@@ -19,6 +19,11 @@ namespace settings
 		// How long Y must be held on a favourited item before it goes to the Back Pocket. A shorter
 		// press is handed back to the inventory as the ordinary Favourite press.
 		inline float holdSeconds = 0.50F;   // fHoldSeconds:General
+
+		// Whether an item has to be a favourite before a hold can send it to the Back Pocket (the owner,
+		// 2026-09-22). ON keeps 1.0.0's behaviour: favourites go in, anything already in the Back Pocket comes
+		// out, every other item is left to the menu. OFF lets a hold pocket any highlighted item.
+		inline bool requireFavourite = true;  // bRequireFavourite:General
 	}
 
 	void Init(const std::string& a_iniFileName);
