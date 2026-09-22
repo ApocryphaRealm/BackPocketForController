@@ -1,7 +1,7 @@
 {
     "name": "backpocketforcontroller",
     "version-string": "1.0.0",
-    "description": "Back Pocket For Controller - hold Y in the Inventory to send a favourited item to Back Pocket, or to take an item out of it.",
+    "description": "Back Pocket for Controller - hold Y in the Inventory to send a favourited item to Back Pocket, or to take an item out of it.",
     "homepage": "https://github.com/ApocryphaRealm/BackPocketForController",
     "license": "GPL-3.0-or-later",
     "dependencies": [
