@@ -1,4 +1,4 @@
-# Back Pocket for Controller
+# Back Pocket For Controller
 
 Keeps the items you never sell or drop out of the way: a **Back Pocket** category in SkyUI's item menus holds them,
 and every regular category stops listing them. They stay in your inventory; they are just not in your way.

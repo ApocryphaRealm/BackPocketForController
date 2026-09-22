@@ -1,6 +1,6 @@
 # Third-party components and their notices
 
-Back Pocket for Controller as a whole is GPL-3.0-or-later (`LICENSE`, `NOTICE.md`). These components are included under their own
+Back Pocket For Controller as a whole is GPL-3.0-or-later (`LICENSE`, `NOTICE.md`). These components are included under their own
 GPL-compatible licences; their notices are reproduced as those licences require.
 
 ## CommonLibSSE-NG 3.7.0

@@ -1,4 +1,4 @@
-# Back Pocket for Controller - copyright and licence
+# Back Pocket For Controller - copyright and licence
 
 Copyright (C) 2026 ApocryphaRealm
 
@@ -22,12 +22,12 @@ distributed under GPL-3.0-or-later. The SE 1.5.97 / AE 1.6.x build links CommonL
 
 ## Where it comes from
 
-Back Pocket for Controller is a fork of **Back Pocket** (https://www.nexusmods.com/skyrimspecialedition/mods/188847,
+Back Pocket For Controller is a fork of **Back Pocket** (https://www.nexusmods.com/skyrimspecialedition/mods/188847,
 by ThePenguinT; source https://github.com/theosw/SkyrimBackPocket at commit 6d6112c6b46803d88deb7a850719c5ca87de612e),
 under the MIT terms. Back Pocket's code is in `source/back_pocket/` and `include/back_pocket/`, its category icon in
 `dist/Interface/BackPocket/`, and its MIT notice in `THIRD_PARTY_NOTICES.md` and `LICENSE-BackPocket-MIT.txt`.
 
-Changes made to Back Pocket's code, 2026-09-22 (each marked "Back Pocket for Controller" at the site):
+Changes made to Back Pocket's code, 2026-09-22 (each marked "Back Pocket For Controller" at the site):
 * `config.cpp` rewritten to read `BackPocketForController.ini` with ordinary file I/O instead of the Win32 profile API;
   same keys, defaults and validation. The controller tap binding (`controller_toggle_item_key_code`) defaults to off.
 * `inventory_filter`: `request_toggle_item()` added, the entry point the Y hold calls.

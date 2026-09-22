@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-r"""Assemble "Back Pocket for Controller <ver>" in 7. current test builds from this repo's build tree and documents.
+r"""Assemble "Back Pocket For Controller <ver>" in 7. current test builds from this repo's build tree and documents.
 
 One build line (SE 1.5.97 / AE 1.6.1170 / GOG 1.6.1179): Back Pocket's hooks carry no 1.7 addresses, so there is no
 FOMOD - the package installs as it is.
@@ -15,7 +15,7 @@ import os, re, shutil
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(REPO, "..", ".."))
-NAME, TARGET = "Back Pocket for Controller", "BackPocketForController"
+NAME, TARGET = "Back Pocket For Controller", "BackPocketForController"
 
 
 def fail(msg):

@@ -1,4 +1,4 @@
-Back Pocket for Controller
+Back Pocket For Controller
 ==========================
 Version 1.0.0
 

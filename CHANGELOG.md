@@ -1,4 +1,4 @@
-# Changelog - Back Pocket for Controller
+# Changelog - Back Pocket For Controller
 
 ## 1.0.0
 
