@@ -8,6 +8,7 @@
 #include "back_pocket/quick_item_transfer_policy.h"
 #include "back_pocket/tab_transition_policy.h"
 #include "item_menu_footer.h"
+#include "Settings.h"   // bSeparateFavourites (Back Pocket for Controller)
 
 namespace back_pocket::inventory_filter {
 namespace {
@@ -38,6 +39,8 @@ constexpr std::string_view category_icon_source = "BackPocket/category_icon.swf"
 constexpr std::string_view category_icon_label = "back_pocket";
 constexpr std::string_view fallback_icon_label = "inv_misc";
 constexpr std::string_view category_text = "Back Pocket";
+// The second pocket (bSeparateFavourites). Not "Favourites": SkyUI already has a FAVORITES category beside it.
+constexpr std::string_view favourite_category_text = "Favourites Pocket";
 
 constexpr std::uint32_t default_regular_category_index = 1;
 constexpr std::uint32_t invalid_category_index = std::numeric_limits<std::uint32_t>::max();
@@ -92,6 +95,8 @@ struct runtime_state {
   bool icon_hook_installed = false;
   bool tab_press_hook_installed = false;
   std::uint32_t category_index = invalid_category_index;
+  std::uint32_t favourite_category_index = invalid_category_index;   // the Favourites pocket, when split
+  std::uint32_t last_pocket_flag = category_policy::pocket_filter_flag; // the pocket to restore after a tab change
   std::uint32_t last_regular_category_index = default_regular_category_index;
   std::atomic_bool integration_queued = false;
   std::atomic_bool footer_refresh_queued = false;
@@ -198,6 +203,22 @@ void notify(const std::string_view message) {
   return number_as_u32(value).value_or(0);
 }
 
+[[nodiscard]] bool separate_favourites() noexcept {
+  return ::settings::general::separateFavourites;
+}
+
+// SkyUI's row carries the favourite mark as "favorite" (0/1; a bool on some list builds).
+[[nodiscard]] bool row_favourite(RE::GFxValue& row) {
+  RE::GFxValue value;
+  if (!row.GetMember("favorite", &value)) {
+    return false;
+  }
+  if (value.IsBool()) {
+    return value.GetBool();
+  }
+  return value.IsNumber() && value.GetNumber() != 0.0;
+}
+
 bool set_row_membership(RE::GFxValue& row) {
   runtime_state& current = state();
   if (current.pocket_state == nullptr) {
@@ -208,7 +229,8 @@ bool set_row_membership(RE::GFxValue& row) {
   const std::optional<form_id> form = read_form_id(row);
   const bool pocketed = category_policy::is_player_inventory_filter(original) && form.has_value() &&
                         current.pocket_state->contains(*form);
-  const std::uint32_t updated = category_policy::row_filter_flag(original, pocketed);
+  const std::uint32_t updated =
+      category_policy::row_filter_flag(original, pocketed, pocketed && separate_favourites() && row_favourite(row));
   return row.SetMember(filter_flag_member.data(), RE::GFxValue(static_cast<double>(updated)));
 }
 
@@ -296,10 +318,14 @@ public:
     }
 
     const bool pocket_view = category_policy::is_pocket_category(*selected_flag);
+    const bool favourite_view = category_policy::is_favourite_pocket_category(*selected_flag);
+    const bool split = separate_favourites();
     if (pocket_view) {
       use_mixed_inventory_layout(*params.movie);
+      current.last_pocket_flag = *selected_flag;
     } else if (const auto index = selected_category_index(*params.movie);
-               index.has_value() && *index != current.category_index) {
+               index.has_value() && *index != current.category_index &&
+               *index != current.favourite_category_index) {
       current.last_regular_category_index = *index;
     }
 
@@ -315,6 +341,9 @@ public:
           const inventory_view view =
               pocket_view ? inventory_view::pocket : inventory_view::regular;
           visible = current.pocket_state->visible(*form, view);
+          if (visible && pocket_view && split) {
+            visible = row_favourite(row) == favourite_view;   // each pocket holds its own half
+          }
         }
       }
       if (!visible && !rows.RemoveElement(index)) {
@@ -444,6 +473,44 @@ bool set_icon_label(RE::GFxValue& icon_art, const std::uint32_t index, const boo
   return true;
 }
 
+bool make_category_entry(RE::GFxMovie& movie, RE::GFxValue& entry, const std::string_view text,
+                         const std::uint32_t flag) {
+  movie.CreateObject(&entry);
+  return entry.SetMember("text", RE::GFxValue(text)) &&
+         entry.SetMember("flag", RE::GFxValue(static_cast<double>(flag))) &&
+         entry.SetMember("bDontHide", RE::GFxValue(true)) &&
+         entry.SetMember("savedItemIndex", RE::GFxValue(0)) &&
+         entry.SetMember("filterFlag", RE::GFxValue(1)) &&
+         entry.SetMember(category_marker.data(), RE::GFxValue(true));
+}
+
+bool refresh_category_entry(RE::GFxValue& entries, const std::uint32_t index) {
+  RE::GFxValue entry;
+  return entries.GetElement(index, &entry) && entry.IsObject() &&
+         entry.SetMember("bDontHide", RE::GFxValue(true)) &&
+         entry.SetMember("filterFlag", RE::GFxValue(1)) &&
+         entry.SetMember(category_marker.data(), RE::GFxValue(true));
+}
+
+bool append_category_entry(RE::GFxMovie& movie, RE::GFxValue& entries, RE::GFxValue& icon_art,
+                           const std::uint32_t first_player_index, const bool custom_icon,
+                           const std::string_view text, const std::uint32_t flag,
+                           std::uint32_t& appended_index) {
+  RE::GFxValue entry;
+  if (!make_category_entry(movie, entry, text, flag)) {
+    return false;
+  }
+  const std::uint32_t index = entries.GetArraySize();
+  if (!entries.SetArraySize(index + 1) || !entries.SetElement(index, entry) ||
+      !set_icon_label(icon_art, index - first_player_index, custom_icon)) {
+    return false;
+  }
+  appended_index = index;
+  return true;
+}
+
+// The pockets follow the player segment and end the list: [...player][Back Pocket][Favourites]. The Favourites entry
+// is there only when the pockets are split (bSeparateFavourites, 1.1.0).
 category_installation inject_category(RE::GFxMovie& movie, const bool custom_icon) {
   RE::GFxValue category_list;
   RE::GFxValue entries;
@@ -455,10 +522,12 @@ category_installation inject_category(RE::GFxMovie& movie, const bool custom_ico
   }
 
   runtime_state& current = state();
+  const bool split = separate_favourites();
   const std::uint32_t entry_count = entries.GetArraySize();
   std::optional<std::uint32_t> first_player_index;
   std::optional<std::uint32_t> last_player_index;
   std::optional<std::uint32_t> existing_pocket_index;
+  std::optional<std::uint32_t> existing_favourite_index;
   for (std::uint32_t index = 0; index < entry_count; ++index) {
     RE::GFxValue entry;
     RE::GFxValue flag;
@@ -470,7 +539,9 @@ category_installation inject_category(RE::GFxMovie& movie, const bool custom_ico
     if (!parsed_flag.has_value()) {
       continue;
     }
-    if (category_policy::is_pocket_category(*parsed_flag)) {
+    if (category_policy::is_favourite_pocket_category(*parsed_flag)) {
+      existing_favourite_index = index;
+    } else if (category_policy::is_pocket_category(*parsed_flag)) {
       existing_pocket_index = index;
     } else if (category_policy::is_player_inventory_filter(*parsed_flag)) {
       if (!first_player_index.has_value()) {
@@ -483,24 +554,38 @@ category_installation inject_category(RE::GFxMovie& movie, const bool custom_ico
   if (!first_player_index.has_value() || !last_player_index.has_value()) {
     return entry_count == 0 ? category_installation::failed : category_installation::not_applicable;
   }
+  const std::uint32_t regular_index =
+      *first_player_index < *last_player_index ? *first_player_index + 1 : *first_player_index;
 
   if (existing_pocket_index.has_value()) {
-    if (*existing_pocket_index != entry_count - 1 ||
-        *last_player_index + 1 != *existing_pocket_index) {
+    const std::uint32_t last_pocket =
+        existing_favourite_index.has_value() ? *existing_favourite_index : *existing_pocket_index;
+    if (*last_player_index + 1 != *existing_pocket_index || last_pocket != entry_count - 1 ||
+        (existing_favourite_index.has_value() && *existing_favourite_index != *existing_pocket_index + 1)) {
       return category_installation::failed;
     }
-
-    RE::GFxValue entry;
-    if (!entries.GetElement(*existing_pocket_index, &entry) || !entry.IsObject() ||
-        !entry.SetMember("bDontHide", RE::GFxValue(true)) ||
-        !entry.SetMember("filterFlag", RE::GFxValue(1)) ||
-        !entry.SetMember(category_marker.data(), RE::GFxValue(true)) ||
+    if (!refresh_category_entry(entries, *existing_pocket_index) ||
         !set_icon_label(icon_art, *existing_pocket_index - *first_player_index, custom_icon)) {
       return category_installation::failed;
     }
+    std::uint32_t favourite_index = invalid_category_index;
+    if (existing_favourite_index.has_value()) {
+      if (!refresh_category_entry(entries, *existing_favourite_index) ||
+          !set_icon_label(icon_art, *existing_favourite_index - *first_player_index, custom_icon)) {
+        return category_installation::failed;
+      }
+      favourite_index = *existing_favourite_index;
+    } else if (split) {
+      if (!append_category_entry(movie, entries, icon_art, *first_player_index, custom_icon,
+                                 favourite_category_text,
+                                 category_policy::favourite_pocket_filter_flag, favourite_index)) {
+        return category_installation::failed;
+      }
+      static_cast<void>(category_list.Invoke("InvalidateData", nullptr, nullptr, 0));
+    }
     current.category_index = *existing_pocket_index;
-    current.last_regular_category_index =
-        *first_player_index < *last_player_index ? *first_player_index + 1 : *first_player_index;
+    current.favourite_category_index = favourite_index;
+    current.last_regular_category_index = regular_index;
     return category_installation::installed;
   }
 
@@ -510,27 +595,19 @@ category_installation inject_category(RE::GFxMovie& movie, const bool custom_ico
     return category_installation::failed;
   }
 
-  RE::GFxValue entry;
-  movie.CreateObject(&entry);
-  if (!entry.SetMember("text", RE::GFxValue(category_text)) ||
-      !entry.SetMember("flag",
-                       RE::GFxValue(static_cast<double>(category_policy::pocket_filter_flag))) ||
-      !entry.SetMember("bDontHide", RE::GFxValue(true)) ||
-      !entry.SetMember("savedItemIndex", RE::GFxValue(0)) ||
-      !entry.SetMember("filterFlag", RE::GFxValue(1)) ||
-      !entry.SetMember(category_marker.data(), RE::GFxValue(true))) {
+  std::uint32_t pocket_index = invalid_category_index;
+  std::uint32_t favourite_index = invalid_category_index;
+  if (!append_category_entry(movie, entries, icon_art, *first_player_index, custom_icon, category_text,
+                             category_policy::pocket_filter_flag, pocket_index) ||
+      (split && !append_category_entry(movie, entries, icon_art, *first_player_index, custom_icon,
+                                       favourite_category_text,
+                                       category_policy::favourite_pocket_filter_flag, favourite_index))) {
     return category_installation::failed;
   }
 
-  const std::uint32_t index = entries.GetArraySize();
-  if (!entries.SetArraySize(index + 1) || !entries.SetElement(index, entry) ||
-      !set_icon_label(icon_art, index - *first_player_index, custom_icon)) {
-    return category_installation::failed;
-  }
-
-  current.category_index = index;
-  current.last_regular_category_index =
-      *first_player_index < *last_player_index ? *first_player_index + 1 : *first_player_index;
+  current.category_index = pocket_index;
+  current.favourite_category_index = favourite_index;
+  current.last_regular_category_index = regular_index;
   static_cast<void>(category_list.Invoke("InvalidateData", nullptr, nullptr, 0));
   return category_installation::installed;
 }
@@ -616,7 +693,8 @@ active_category_segment(RE::GFxValue& inventory_lists) {
 }
 
 [[nodiscard]] std::optional<std::uint32_t>
-find_pocket_category_index(RE::GFxValue& category_list) {
+find_pocket_category_index(RE::GFxValue& category_list,
+                           const std::uint32_t wanted = category_policy::pocket_filter_flag) {
   RE::GFxValue entries;
   if (!category_list.GetMember("entryList", &entries) || !entries.IsArray()) {
     return std::nullopt;
@@ -633,7 +711,7 @@ find_pocket_category_index(RE::GFxValue& category_list) {
       continue;
     }
     if (const std::optional<std::uint32_t> parsed = number_as_u32(flag);
-        parsed.has_value() && category_policy::is_pocket_category(*parsed)) {
+        parsed.has_value() && *parsed == wanted) {
       return index;
     }
   }
@@ -707,14 +785,17 @@ bool restore_pocket_category(RE::GFxMovie& movie, RE::GFxValue& inventory_lists,
     return false;
   }
 
-  const std::optional<std::uint32_t> category_index =
-      find_pocket_category_index(category_list);
+  // the pocket that was open when the player left the tab - the Favourites pocket when it was that one
+  std::optional<std::uint32_t> category_index =
+      find_pocket_category_index(category_list, state().last_pocket_flag);
+  if (!category_index.has_value()) {
+    category_index = find_pocket_category_index(category_list);
+  }
   if (!category_index.has_value() ||
       !select_category(inventory_lists, category_list, *category_index)) {
     return false;
   }
 
-  state().category_index = *category_index;
   restored_index = *category_index;
   use_mixed_inventory_layout(movie);
   request_invalidate(movie);
@@ -1077,6 +1158,7 @@ integration_result install_menu_integration_now() {
     current.icon_hook_installed = false;
     current.category_installed = false;
     current.category_index = invalid_category_index;
+    current.favourite_category_index = invalid_category_index;
     current.filter_installed = install_filters(*movie);
     if (!current.filter_installed) {
       logger::warn("item menu integration incomplete: menu={}, category=skipped, filters=false",
@@ -1225,6 +1307,12 @@ void queue_footer_refresh() {
   SKSE::GetTaskInterface()->AddUITask(&refresh_footer_now);
 }
 
+[[nodiscard]] bool selected_row_favourite(RE::GFxMovie& movie) {
+  RE::GFxValue entry;
+  return movie.GetVariable(&entry, "_root.Menu_mc.inventoryLists.itemList.selectedEntry") && entry.IsObject() &&
+         row_favourite(entry);
+}
+
 void toggle_selected_item(RE::GFxMovie& movie) {
   runtime_state& current = state();
   if (current.pocket_state == nullptr) {
@@ -1244,7 +1332,9 @@ void toggle_selected_item(RE::GFxMovie& movie) {
   request_invalidate(movie);
   // SkyUI repairs the selection and refreshes its footer during invalidation. Refreshing here
   // would briefly render the toggled state against the row that is about to disappear.
-  notify(now_pocketed ? "Item moved to Back Pocket" : "Item restored to inventory");
+  notify(!now_pocketed ? "Item restored to inventory"
+         : (separate_favourites() && selected_row_favourite(movie)) ? "Item moved to the Favourites Pocket"
+                                                                       : "Item moved to Back Pocket");
   logger::info("ITEM_TOGGLED form={:08X}, pocketed={}, total={}", *target, now_pocketed,
                current.pocket_state->size());
 }
@@ -1265,8 +1355,12 @@ void switch_category(RE::GFxMovie& movie) {
     return;
   }
   const bool pocket_selected = category_policy::is_pocket_category(*selected_flag);
+  const bool to_favourites = pocket_selected && !category_policy::is_favourite_pocket_category(*selected_flag) &&
+                             separate_favourites() && current.favourite_category_index != invalid_category_index;
   std::uint32_t destination = current.category_index;
-  if (pocket_selected) {
+  if (to_favourites) {
+    destination = current.favourite_category_index;
+  } else if (pocket_selected) {
     destination = current.last_regular_category_index;
   } else if (selected_index.has_value()) {
     current.last_regular_category_index = *selected_index;
@@ -1282,12 +1376,12 @@ void switch_category(RE::GFxMovie& movie) {
     return;
   }
 
-  if (!pocket_selected) {
+  if (!pocket_selected || to_favourites) {
     use_mixed_inventory_layout(movie);
   }
   request_invalidate(movie);
   queue_footer_refresh();
-  notify(pocket_selected ? "Inventory" : "Back Pocket");
+  notify(to_favourites ? "Favourites Pocket" : pocket_selected ? "Inventory" : "Back Pocket");
 }
 
 void run_pending_action() {
@@ -1504,6 +1598,7 @@ public:
       current.icon_hook_installed = false;
       current.tab_press_hook_installed = false;
       current.category_index = invalid_category_index;
+    current.favourite_category_index = invalid_category_index;
       current.last_regular_category_index = default_regular_category_index;
       current.menu_open.store(true);
       logger::info("ITEM_MENU_OPENED menu={} integration_queued=true", menu_name(menu));

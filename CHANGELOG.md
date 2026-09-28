@@ -1,4 +1,20 @@
 # Changelog - Back Pocket For Controller
+## 1.0.2 - 2026-09-28 - working
+
+### Added
+* **Two pockets** (the owner, 2026-09-27: *"let's make it so that back pocket has two different back pockets. One for
+  favorited items and the other for non-favorited items. And this system can be toggled on or off in the INI file"*).
+  Pocketed items that are favourited show in a new **Favourites Pocket** category, the rest in **Back Pocket**; favouriting
+  or unfavouriting a pocketed item moves it across. Nothing new is saved - membership is still the one pocket set, and
+  the split is the item's favourite mark - so saves need nothing and `bSeparateFavourites=false` (default `true`)
+  returns to one Back Pocket at once. The Favourites Pocket entry takes a second reserved filter bit (0x00200000), follows
+  the Back Pocket entry at the end of the player segment, keeps the pocket icon, and is the pocket restored after a
+  container / gift tab change when it was the one open. The view key goes category -> Back Pocket -> Favourites ->
+  category; messages name the pocket.
+
+### Changed
+* Ships at info: `uLogLevel=2` in the INI and as the compiled default (every INI of ours, 2026-09-26).
+
 ## 1.0.1 - 2026-09-22
 
 ### Changed

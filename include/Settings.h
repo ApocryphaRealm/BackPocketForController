@@ -11,7 +11,7 @@ namespace settings
 {
 	namespace debug
 	{
-		inline std::uint32_t logLevel = 0;  // uLogLevel:Debug - 0 = trace (project default)
+		inline std::uint32_t logLevel = 2;  // uLogLevel:Debug - 2 = info (every INI of ours ships at info, 2026-09-26)
 	}
 
 	namespace general
@@ -24,6 +24,9 @@ namespace settings
 		// 2026-09-22). ON keeps 1.0.0's behaviour: favourites go in, anything already in the Back Pocket comes
 		// out, every other item is left to the menu. OFF lets a hold pocket any highlighted item.
 		inline bool requireFavourite = true;  // bRequireFavourite:General
+		// 1.1.0: two pockets - favourited items in "Favourites", the rest in "Back Pocket" (the owner, 2026-09-27).
+		// false = one Back Pocket for everything, as before.
+		inline bool separateFavourites = true;  // bSeparateFavourites:General
 	}
 
 	void Init(const std::string& a_iniFileName);

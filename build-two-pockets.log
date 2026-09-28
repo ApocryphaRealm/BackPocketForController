@@ -1,0 +1,22 @@
+﻿cmd.exe : 'vswhere.exe' is not recognized as an internal or external command,
+At line:1 char:427
++ ... Out-String; & cmd /c "`"$r\build.bat`"" > "$r\build-two-pockets.log"  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ('vswhere.exe' i...ternal command,:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+operable program or batch file.
+[0/2] Re-checking globbed directories...
+[1/8] Building CXX object CMakeFiles\BackPocketForController.dir\source\DevBenchTool.cpp.obj
+cl : Command line warning D9025 : overriding '/DENABLE_SKYRIM_VR=1' with '/UENABLE_SKYRIM_VR'
+[2/8] Building CXX object CMakeFiles\BackPocketForController.dir\source\Settings.cpp.obj
+cl : Command line warning D9025 : overriding '/DENABLE_SKYRIM_VR=1' with '/UENABLE_SKYRIM_VR'
+[3/8] Building CXX object CMakeFiles\BackPocketForController.dir\source\main.cpp.obj
+cl : Command line warning D9025 : overriding '/DENABLE_SKYRIM_VR=1' with '/UENABLE_SKYRIM_VR'
+[4/8] Building CXX object CMakeFiles\BackPocketForController.dir\source\HoldToPocket.cpp.obj
+cl : Command line warning D9025 : overriding '/DENABLE_SKYRIM_VR=1' with '/UENABLE_SKYRIM_VR'
+[5/8] Building CXX object CMakeFiles\BackPocketForController.dir\source\SelfCheck.cpp.obj
+cl : Command line warning D9025 : overriding '/DENABLE_SKYRIM_VR=1' with '/UENABLE_SKYRIM_VR'
+[6/8] Building CXX object CMakeFiles\BackPocketForController.dir\source\back_pocket\inventory_filter.cpp.obj
+cl : Command line warning D9025 : overriding '/DENABLE_SKYRIM_VR=1' with '/UENABLE_SKYRIM_VR'
+[7/8] Linking CXX shared library BackPocketForController.dll

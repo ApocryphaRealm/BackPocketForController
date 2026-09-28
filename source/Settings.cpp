@@ -81,6 +81,10 @@ namespace settings
 		{
 			logger::warn("fHoldSeconds \"{}\" is not a number; keeping {:.2f}", it->second, general::holdSeconds);
 		}
+		if (const auto it = keys.find("bseparatefavourites:general"); it != keys.end() && !ParseBool(it->second, general::separateFavourites))
+		{
+			logger::warn("bSeparateFavourites \"{}\" is not true/false or 1/0; keeping {}", it->second, general::separateFavourites);
+		}
 		if (const auto it = keys.find("brequirefavourite:general"); it != keys.end() && !ParseBool(it->second, general::requireFavourite))
 		{
 			logger::warn("bRequireFavourite \"{}\" is not true/false or 1/0; keeping {}", it->second, general::requireFavourite);

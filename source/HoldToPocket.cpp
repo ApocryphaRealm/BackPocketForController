@@ -33,7 +33,7 @@ namespace HoldToPocket
 
 		// Back Pocket's marks (its source, github.com/theosw/SkyrimBackPocket, MIT): the reserved filter bit it
 		// sets on a pocketed row, and the boolean it puts on its own category entry.
-		inline constexpr std::uint32_t kPocketFilterFlag = 0x00100000u;
+		inline constexpr std::uint32_t kPocketFilterFlag = 0x00100000u | 0x00200000u;   // Back Pocket or the Favourites pocket
 		inline constexpr const char* kItemListPath = "_root.Menu_mc.inventoryLists.itemList";
 		inline constexpr const char* kCategoryListPath = "_root.Menu_mc.inventoryLists.categoryList";
 		inline constexpr const char* kCategoryMarker = "backPocketCategory";

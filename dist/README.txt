@@ -1,9 +1,12 @@
 ﻿Back Pocket For Controller
 ==========================
-Version 1.0.1
+Version 1.0.2
 
 Keeps the items you never sell or drop out of the way. A Back Pocket category in SkyUI's item menus
 holds them, and the regular categories stop listing them. They stay in your inventory.
+TWO POCKETS: favourited items sit in a Favourites Pocket, everything else in the Back Pocket - an
+item moves between them when you favourite or unfavourite it. Set bSeparateFavourites=false in the
+INI for one Back Pocket holding everything.
 
 CONTROLLER: in the Inventory, HOLD Y on a favourited item to send it to the Back Pocket, or on an
 item in the Back Pocket to take it out. A quick press of Y is still the Favourite button, and on any
@@ -29,13 +32,18 @@ SETTINGS
 SKSE\Plugins\BackPocketForController.ini:
   fHoldSeconds (0.50)                    how long Y has to be held
   bRequireFavourite (true)               whether an item must be a favourite before a hold pockets it
+  bSeparateFavourites (true)             two pockets (Favourites Pocket / Back Pocket) or one
   toggle_item_scan_code (48 = B)         the keyboard key
-  toggle_view_scan_code (0 = off)        a keyboard shortcut between Back Pocket and your last category
+  toggle_view_scan_code (0 = off)        a keyboard shortcut: your category -> Back Pocket -> Favourites Pocket -> back
   controller_toggle_item_key_code (-1)   an extra controller TAP binding, off by default
   show_notifications, hide_pocketed_from_disenchanting
 
 WHAT CHANGED
 ------------
+
+Version 1.0.2
+Added a second pocket: favourited items go in a Favourites Pocket and everything else in the Back Pocket. Turn it
+off with bSeparateFavourites=false. The log ships at info.
 
 Version 1.0.1
 Fixed a crash when favouriting or unfavouriting an item on Skyrim SE 1.5.97.
