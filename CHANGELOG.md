@@ -1,5 +1,5 @@
 # Changelog - Back Pocket For Controller
-## 1.0.4 - 2026-09-28 - untested
+## 1.0.4 - 2026-09-28 - working
 
 ### Changed
 * **Keys are read again at runtime**: on every item-menu open the INI's write time is compared, and a newer file's keys
