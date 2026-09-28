@@ -1,4 +1,12 @@
 # Changelog - Back Pocket For Controller
+## 1.0.3 - 2026-09-28 - working
+
+### Changed
+* **The Favourites Pocket has its own icon** - the satchel with a star in its top-right corner (the owner: *"We should
+  probably make the other back pocket icon distinct"*). category_icon.swf gains a second frame, `favourite_pocket`,
+  built by tools/build-category-icon.py from the original satchel frame (kept byte for byte) plus a star shape in the
+  same colour; the Favourites entry's icon label points at it.
+
 ## 1.0.2 - 2026-09-28 - working
 
 ### Added

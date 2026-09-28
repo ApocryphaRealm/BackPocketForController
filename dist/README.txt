@@ -1,6 +1,6 @@
 ﻿Back Pocket For Controller
 ==========================
-Version 1.0.2
+Version 1.0.3
 
 Keeps the items you never sell or drop out of the way. A Back Pocket category in SkyUI's item menus
 holds them, and the regular categories stop listing them. They stay in your inventory.
@@ -40,6 +40,9 @@ SKSE\Plugins\BackPocketForController.ini:
 
 WHAT CHANGED
 ------------
+
+Version 1.0.3
+The Favourites Pocket has its own icon: the satchel with a star.
 
 Version 1.0.2
 Added a second pocket: favourited items go in a Favourites Pocket and everything else in the Back Pocket. Turn it

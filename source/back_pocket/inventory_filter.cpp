@@ -37,6 +37,9 @@ constexpr std::string_view quick_item_transfer_dispatch_hook_marker =
 constexpr std::string_view restore_on_player_tab_member = "backPocketRestoreOnPlayerTab";
 constexpr std::string_view category_icon_source = "BackPocket/category_icon.swf";
 constexpr std::string_view category_icon_label = "back_pocket";
+// 1.0.3: the Favourites Pocket's own frame in category_icon.swf - the satchel with a star (the owner: "make the other
+// back pocket icon distinct").
+constexpr std::string_view favourite_icon_label = "favourite_pocket";
 constexpr std::string_view fallback_icon_label = "inv_misc";
 constexpr std::string_view category_text = "Back Pocket";
 // The second pocket (bSeparateFavourites). Not "Favourites": SkyUI already has a FAVORITES category beside it.
@@ -450,7 +453,8 @@ bool install_category_icon_hook(RE::GFxMovie& movie) {
          prototype.SetMember(icon_hook_marker.data(), RE::GFxValue(true));
 }
 
-bool set_icon_label(RE::GFxValue& icon_art, const std::uint32_t index, const bool custom_icon) {
+bool set_icon_label(RE::GFxValue& icon_art, const std::uint32_t index, const bool custom_icon,
+                    const std::string_view label = category_icon_label) {
   if (!icon_art.IsArray()) {
     return false;
   }
@@ -458,7 +462,7 @@ bool set_icon_label(RE::GFxValue& icon_art, const std::uint32_t index, const boo
     return false;
   }
   if (!icon_art.SetElement(index,
-                           RE::GFxValue(custom_icon ? category_icon_label : fallback_icon_label))) {
+                           RE::GFxValue(custom_icon ? label : fallback_icon_label))) {
     return false;
   }
   // 1.0.1 (borokoshow, 2026-09-22, of this mod and of Back Pocket itself: "When trading, if I change between give and
@@ -496,13 +500,15 @@ bool append_category_entry(RE::GFxMovie& movie, RE::GFxValue& entries, RE::GFxVa
                            const std::uint32_t first_player_index, const bool custom_icon,
                            const std::string_view text, const std::uint32_t flag,
                            std::uint32_t& appended_index) {
+  const std::string_view label =
+      category_policy::is_favourite_pocket_category(flag) ? favourite_icon_label : category_icon_label;
   RE::GFxValue entry;
   if (!make_category_entry(movie, entry, text, flag)) {
     return false;
   }
   const std::uint32_t index = entries.GetArraySize();
   if (!entries.SetArraySize(index + 1) || !entries.SetElement(index, entry) ||
-      !set_icon_label(icon_art, index - first_player_index, custom_icon)) {
+      !set_icon_label(icon_art, index - first_player_index, custom_icon, label)) {
     return false;
   }
   appended_index = index;
@@ -571,7 +577,8 @@ category_installation inject_category(RE::GFxMovie& movie, const bool custom_ico
     std::uint32_t favourite_index = invalid_category_index;
     if (existing_favourite_index.has_value()) {
       if (!refresh_category_entry(entries, *existing_favourite_index) ||
-          !set_icon_label(icon_art, *existing_favourite_index - *first_player_index, custom_icon)) {
+          !set_icon_label(icon_art, *existing_favourite_index - *first_player_index, custom_icon,
+                          favourite_icon_label)) {
         return category_installation::failed;
       }
       favourite_index = *existing_favourite_index;
