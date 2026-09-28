@@ -31,6 +31,21 @@ namespace HoldToPocket
 
 		inline constexpr std::uint32_t kButtonY = 0x8000;   // XInput Y, as Skyrim's ButtonEvent carries it
 
+		// The hold rides on the item menus' FAVOURITE button, whichever button that is (the owner agreed, 2026-09-28): a tap
+		// is given back as a favourite, a hold pockets. Unbind Vanilla Controls makes Favorite Item a control of its own that
+		// the player can move; the hold staying on Y would then swallow a Y that no longer favourites, and the button that
+		// does favourite would have no hold. Read from the control map at every press, so a rebind applies at once; Y when
+		// the favourite button is not bound on the controller (the game's own default).
+		std::uint32_t HoldButton()
+		{
+			if (const auto* controlMap = RE::ControlMap::GetSingleton())
+			{
+				const std::uint32_t key = controlMap->GetMappedKey("YButton", RE::INPUT_DEVICE::kGamepad, RE::UserEvents::INPUT_CONTEXT_ID::kItemMenu);
+				if (key != 0 && key != 0xFF && key != static_cast<std::uint32_t>(-1)) { return key; }
+			}
+			return kButtonY;
+		}
+
 		// Back Pocket's marks (its source, github.com/theosw/SkyrimBackPocket, MIT): the reserved filter bit it
 		// sets on a pocketed row, and the boolean it puts on its own category entry.
 		inline constexpr std::uint32_t kPocketFilterFlag = 0x00100000u | 0x00200000u;   // Back Pocket or the Favourites pocket
@@ -248,7 +263,9 @@ namespace HoldToPocket
 		bool Filter(RE::InputEvent* a_event)
 		{
 			auto* button = a_event->AsButtonEvent();
-			if (!button || button->GetDevice() != RE::INPUT_DEVICE::kGamepad || button->GetIDCode() != kButtonY || Ours(a_event)) { return false; }
+			if (!button || button->GetDevice() != RE::INPUT_DEVICE::kGamepad || Ours(a_event)) { return false; }
+			const std::uint32_t holdButton = HoldButton();
+			if (button->GetIDCode() != holdButton) { return false; }
 
 			if (button->IsDown())
 			{
@@ -306,9 +323,9 @@ namespace HoldToPocket
 				std::string why;
 				if (InventoryInFront(why))
 				{
-					g_pending.push_back({ RE::INPUT_DEVICE::kGamepad, kButtonY, 1, true, true });
+					g_pending.push_back({ RE::INPUT_DEVICE::kGamepad, holdButton, 1, true, true });
 					++g_state.tapsGivenBack;
-					Decide(std::format("tap ({:.2f}s): Y given back to the Inventory", button->HeldDuration()));
+					Decide(std::format("tap ({:.2f}s): button 0x{:X} given back to the Inventory", button->HeldDuration(), holdButton));
 				}
 				else
 				{
@@ -394,7 +411,8 @@ namespace HoldToPocket
 	{
 		std::scoped_lock l(g_lock);
 		// Named and NOT ours: it reaches this patch's own filter like a hardware press.
-		g_pending.push_back({ RE::INPUT_DEVICE::kGamepad, kButtonY, a_frames < 1 ? 1 : (a_frames > 600 ? 600 : a_frames), true, false });
-		logger::info("DevBench: queued a {}-frame Y press", a_frames);
+		const std::uint32_t button = HoldButton();
+		g_pending.push_back({ RE::INPUT_DEVICE::kGamepad, button, a_frames < 1 ? 1 : (a_frames > 600 ? 600 : a_frames), true, false });
+		logger::info("DevBench: queued a {}-frame press of the favourite button 0x{:X}", a_frames, button);
 	}
 }

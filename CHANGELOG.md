@@ -1,4 +1,24 @@
 # Changelog - Back Pocket For Controller
+## 1.0.4 - 2026-09-28 - untested
+
+### Changed
+* **Keys are read again at runtime**: on every item-menu open the INI's write time is compared, and a newer file's keys
+  replace the running ones, footer prompt included - no restart after rebinding.
+* **The controller hold rides on the item menus' Favourite button**, read from the control map at every press (Y when it
+  is unbound), so moving Favorite Item with Unbind Vanilla Controls moves the hold with it. Tap = that button given back
+  (favourite), hold = pocket.
+* **A hold pockets any item by default** - `bRequireFavourite` now ships `false` (INI and compiled default). With two
+  pockets, `true` let a hold send only favourited items, so the plain Back Pocket could never be reached by a hold (the
+  owner, 2026-09-28: *"when holding y over an un favorited item, it doesnt send it to back pocket"*). Favourites still go
+  to the Favourites Pocket, everything else to Back Pocket.
+
+### Fixed
+* **A tap of the Favourite button no longer pockets the item** (the owner, 2026-09-28: *"favoriting an item in inventory
+  is automatically sending it to the back pocket when its supposed to just favorite it"*). An extra controller key
+  (`controller_toggle_item_key_code`) set to the same button as the hold - Unbind Vanilla Controls' Back Pocket row had
+  been set to Y - pocketed on the press, before the hold could hand a tap back as a favourite. That binding is now
+  ignored on the Favourite button (logged once as a warning); the hold decides.
+
 ## 1.0.3 - 2026-09-28 - working
 
 ### Changed

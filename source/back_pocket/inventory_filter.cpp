@@ -1480,6 +1480,19 @@ void record_gamepad_button(const input_binding::gamepad_button_id button,
   }
 }
 
+// The item menus' Favourite button on the controller, from the live control map (Y when it has none) - the same button
+// HoldToPocket.cpp holds on.
+std::uint32_t favourite_gamepad_button() {
+  if (const auto* control_map = RE::ControlMap::GetSingleton()) {
+    const std::uint32_t key = control_map->GetMappedKey("YButton", RE::INPUT_DEVICE::kGamepad,
+                                                        RE::UserEvents::INPUT_CONTEXT_ID::kItemMenu);
+    if (key != 0 && key != 0xFF && key != static_cast<std::uint32_t>(-1)) {
+      return key;
+    }
+  }
+  return 0x8000;
+}
+
 void dispatch_toggle_action(const action_device device, const std::uint32_t code) {
   constexpr std::chrono::milliseconds duplicate_window{250};
   runtime_state& current = state();
@@ -1548,6 +1561,21 @@ public:
 
       const input_binding::gamepad_button_id observed = button->GetIDCode();
       input_binding::controller_result result = input_binding::controller_result::none;
+      // The favourite button belongs to the HOLD (HoldToPocket.cpp): a tap favourites, a hold pockets. A controller key
+      // bound to that same button pocketed on the press and never let a tap favourite (the owner, 2026-09-28: "favoriting
+      // an item in inventory is automatically sending it to the back pocket"; Unbind Vanilla Controls' Back Pocket row had
+      // been set to Y). Such a binding is ignored, so the hold decides.
+      if (current.controller_toggle_item_button.has_value() && observed == favourite_gamepad_button()) {
+        static bool logged = false;
+        if (!logged) {
+          logged = true;
+          logger::warn("controller_toggle_item_key_code is the favourite button (0x{:X}), which the hold uses - that binding "
+                       "is ignored; tap favourites, hold pockets",
+                       observed);
+        }
+        record_gamepad_button(observed, *phase);
+        continue;
+      }
       if (current.controller_toggle_item_button.has_value()) {
         result = input_binding::observe_controller(current.controller_press,
                                                    *current.controller_toggle_item_button, observed,
@@ -1565,7 +1593,7 @@ public:
 } // namespace
 
 void request_toggle_item() {
-  // Back Pocket for Controller: the Y hold (HoldToPocket.cpp) calls this instead of pressing a key.
+  // Back Pocket for Controller: the hold on the favourite button (HoldToPocket.cpp) calls this instead of pressing a key.
   if (!state().menu_open.load()) {
     logger::debug("TOGGLE_ITEM_REQUEST ignored: no item menu is open");
     return;
@@ -1577,6 +1605,59 @@ namespace {
 input_event_sink& input_sink() {
   static input_event_sink instance;
   return instance;
+}
+
+// The keys read at RUNTIME (the owner, 2026-09-28: "Wheeler and back pocket should both read their keys at runtime ...
+// So it doesnt need a restart"). Another mod can write this file while the game runs - Unbind Vanilla Controls' Back
+// Pocket row on the game's Controls page does - and the keys were read only at data load, so a new key did nothing
+// until the next start. Each time an item menu OPENS the file's write time is compared with the one last read; a newer
+// file's keys (the item key, the category shortcut and the controller button) replace the running ones, footer
+// prompt included. A file changed by hand is picked up the same way.
+std::optional<std::filesystem::file_time_type> config_stamp() {
+  std::error_code ec;
+  const auto path =
+      std::filesystem::current_path() / "Data" / "SKSE" / "Plugins" / "BackPocketForController.ini";
+  const auto stamp = std::filesystem::last_write_time(path, ec);
+  if (ec) {
+    return std::nullopt;
+  }
+  return stamp;
+}
+
+std::optional<std::filesystem::file_time_type>& last_config_stamp() {
+  static std::optional<std::filesystem::file_time_type> stamp;
+  return stamp;
+}
+
+void reload_keys_if_changed() {
+  const auto now = config_stamp();
+  if (!now.has_value() || now == last_config_stamp()) {
+    return;
+  }
+  last_config_stamp() = now;
+  const config::settings fresh = config::load();
+  runtime_state& current = state();
+  if (fresh.toggle_item_scan_code == current.configuration.toggle_item_scan_code &&
+      fresh.toggle_view_scan_code == current.configuration.toggle_view_scan_code &&
+      fresh.controller_toggle_item_key_code == current.configuration.controller_toggle_item_key_code) {
+    return;
+  }
+  current.configuration.toggle_item_scan_code = fresh.toggle_item_scan_code;
+  current.configuration.toggle_view_scan_code = fresh.toggle_view_scan_code;
+  current.configuration.controller_toggle_item_key_code = fresh.controller_toggle_item_key_code;
+  current.controller_toggle_item_button =
+      fresh.controller_toggle_item_key_code.has_value()
+          ? input_binding::gamepad_button(*fresh.controller_toggle_item_key_code)
+          : std::nullopt;
+  static_cast<void>(item_menu_footer::install(fresh.toggle_item_scan_code,
+                                              fresh.controller_toggle_item_key_code, &footer_presentation));
+  logger::info("KEYS_RELOADED BackPocketForController.ini changed while the game ran: item_key={}, "
+               "controller_item_key={}, category_shortcut={}",
+               fresh.toggle_item_scan_code,
+               fresh.controller_toggle_item_key_code.has_value()
+                   ? static_cast<int>(*fresh.controller_toggle_item_key_code)
+                   : -1,
+               fresh.toggle_view_scan_code);
 }
 
 class menu_event_sink final : public RE::BSTEventSink<RE::MenuOpenCloseEvent> {
@@ -1593,6 +1674,7 @@ public:
 
     runtime_state& current = state();
     if (event->opening) {
+      reload_keys_if_changed();
       current.menu_open.store(false);
       current.active_menu.store(menu);
       current.controller_press = {};
@@ -1656,6 +1738,7 @@ bool install(pocket& pocket_state, const config::settings& settings) {
 
   current.pocket_state = &pocket_state;
   current.configuration = settings;
+  last_config_stamp() = config_stamp();  // the file as it was read at data load
   current.controller_toggle_item_button =
       settings.controller_toggle_item_key_code.has_value()
           ? input_binding::gamepad_button(*settings.controller_toggle_item_key_code)

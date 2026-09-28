@@ -1,6 +1,6 @@
 ﻿Back Pocket For Controller
 ==========================
-Version 1.0.3
+Version 1.0.4
 
 Keeps the items you never sell or drop out of the way. A Back Pocket category in SkyUI's item menus
 holds them, and the regular categories stop listing them. They stay in your inventory.
@@ -8,10 +8,11 @@ TWO POCKETS: favourited items sit in a Favourites Pocket, everything else in the
 item moves between them when you favourite or unfavourite it. Set bSeparateFavourites=false in the
 INI for one Back Pocket holding everything.
 
-CONTROLLER: in the Inventory, HOLD Y on a favourited item to send it to the Back Pocket, or on an
-item in the Back Pocket to take it out. A quick press of Y is still the Favourite button, and on any
-other item Y works exactly as before. Set bRequireFavourite=false in the INI and a hold sends
-whatever is highlighted, favourite or not.
+CONTROLLER: in the Inventory, HOLD the Favourite button (Y) on an item to send it to a pocket -
+favourites to the Favourites Pocket, everything else to the Back Pocket - or on a pocketed item to
+take it out. A quick press is still the Favourite button. The hold follows the Favourite button: move
+Favourite to another button (Unbind Vanilla Controls lets you) and the hold moves with it. Set
+bRequireFavourite=true in the INI and a hold only pockets favourites.
 The Back Pocket does not appear in the trading menu: it holds what you do not mean to trade, so
 pocketed items are in no merchant list and cannot be sold by accident.
 KEYBOARD: B moves the highlighted item in or out.
@@ -30,8 +31,8 @@ Pocket keeps its pocketed items.
 SETTINGS
 --------
 SKSE\Plugins\BackPocketForController.ini:
-  fHoldSeconds (0.50)                    how long Y has to be held
-  bRequireFavourite (true)               whether an item must be a favourite before a hold pockets it
+  fHoldSeconds (0.50)                    how long the Favourite button has to be held
+  bRequireFavourite (false)              whether an item must be a favourite before a hold pockets it
   bSeparateFavourites (true)             two pockets (Favourites Pocket / Back Pocket) or one
   toggle_item_scan_code (48 = B)         the keyboard key
   toggle_view_scan_code (0 = off)        a keyboard shortcut: your category -> Back Pocket -> Favourites Pocket -> back
@@ -40,6 +41,12 @@ SKSE\Plugins\BackPocketForController.ini:
 
 WHAT CHANGED
 ------------
+
+Version 1.0.4
+Holding the Favourite button pockets any item: favourites go to the Favourites Pocket, the rest to the Back Pocket. Before, a hold only took favourites, so nothing could reach the Back Pocket by holding.
+The hold follows the Favourite button, so it moves with it if you rebind Favourite.
+A controller key set to the Favourite button no longer pockets on a quick press - the hold decides, so a tap favourites again.
+Keys changed in the INI (or through Unbind Vanilla Controls) apply the next time an item menu opens - no restart.
 
 Version 1.0.3
 The Favourites Pocket has its own icon: the satchel with a star.

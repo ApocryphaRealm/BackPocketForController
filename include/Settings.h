@@ -23,7 +23,7 @@ namespace settings
 		// Whether an item has to be a favourite before a hold can send it to the Back Pocket (the owner,
 		// 2026-09-22). ON keeps 1.0.0's behaviour: favourites go in, anything already in the Back Pocket comes
 		// out, every other item is left to the menu. OFF lets a hold pocket any highlighted item.
-		inline bool requireFavourite = true;  // bRequireFavourite:General
+		inline bool requireFavourite = false;  // bRequireFavourite:General
 		// 1.1.0: two pockets - favourited items in "Favourites", the rest in "Back Pocket" (the owner, 2026-09-27).
 		// false = one Back Pocket for everything, as before.
 		inline bool separateFavourites = true;  // bSeparateFavourites:General
