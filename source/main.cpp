@@ -35,10 +35,20 @@ namespace
 
 	// Back Pocket's hooks carry Address Library IDs and call-site offsets for these runtimes (upstream supports
 	// SE 1.5.97, AE 1.6.1170 and GOG 1.6.1179); anywhere else the mod loads inert and says so.
+	// The runtimes whose patch sites were checked for this build line (both hooks are byte-checked at install as well).
+#if RUNTIME_LINE == 17
+	constexpr const char* kSupportedRuntimes = "1.7.99 and 1.7.104";
+	bool SupportedRuntime(const REL::Version& a_v)
+	{
+		return a_v == REL::Version{ 1, 7, 99, 0 } || a_v == REL::Version{ 1, 7, 104, 0 };
+	}
+#else
+	constexpr const char* kSupportedRuntimes = "1.5.97, 1.6.1170 and 1.6.1179";
 	bool SupportedRuntime(const REL::Version& a_v)
 	{
 		return a_v == REL::Version{ 1, 5, 97, 0 } || a_v == REL::Version{ 1, 6, 1170, 0 } || a_v == REL::Version{ 1, 6, 1179, 0 };
 	}
+#endif
 
 	void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	{
@@ -102,7 +112,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 	const REL::Version runtime = a_skse->RuntimeVersion();
 	if (!SupportedRuntime(runtime))
 	{
-		logger::critical("unsupported Skyrim runtime {}; this build supports 1.5.97, 1.6.1170 and 1.6.1179", runtime.string("."));
+		logger::critical("unsupported Skyrim runtime {}; this build supports {}", runtime.string("."), kSupportedRuntimes);
 		SelfCheck::Set("Runtime", false, "unsupported runtime " + runtime.string(".") + " - the mod is inert");
 		return true;
 	}

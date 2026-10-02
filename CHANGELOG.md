@@ -1,4 +1,12 @@
 # Changelog - Back Pocket For Controller
+## 1.0.5 - 2026-10-02 - untested
+
+### Added
+- Skyrim 1.7.x build. The download is now an installer that asks which Skyrim you have: SE 1.5.97 / AE 1.6.1170 (CommonLibSSE-NG 3.7, as before) or Skyrim 1.7.99 / 1.7.104 (CommonLibSSE-NG 7.2; needs SKSE 2.3.x and Address Library All-in-One v13 or newer). On 1.7.104 the old single DLL asked for version-1-7-104-0.bin, a file nobody ships (ElisdrielPrince's report, 2026-10-02: "wrong address"). No game address changed: both patch sites are the same instructions on 1.7.104.
+
+### Changed
+- The wrong build for the game is named. The SE/AE 1.6 DLL on Skyrim 1.7.x (or the 1.7 DLL on SE/AE 1.6) says which build it is and to pick the other installer option, and loads inert - instead of asking for an Address Library file that does not exist.
+
 ## 1.0.4 - 2026-09-28 - working
 
 ### Changed

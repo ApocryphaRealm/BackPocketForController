@@ -20,11 +20,12 @@ KEYBOARD: B moves the highlighted item in or out.
 REQUIREMENTS
 ------------
 - SKSE, Address Library for SKSE Plugins, SkyUI.
-- Skyrim SE 1.5.97, AE 1.6.1170 or GOG 1.6.1179.
+- Skyrim SE 1.5.97, AE 1.6.1170 or GOG 1.6.1179, or Skyrim 1.7.99 / 1.7.104 (needs SKSE 2.3.x and
+  Address Library All-in-One v13 or newer). The installer asks which one you have.
 
 INSTALLATION
 ------------
-Install with a mod manager. No plugin, load order does not matter.
+Install with a mod manager and pick your game version in the installer. No plugin, load order does not matter.
 This replaces Back Pocket - disable or remove Back Pocket if you have it. A save made with Back
 Pocket keeps its pocketed items.
 
@@ -41,6 +42,10 @@ SKSE\Plugins\BackPocketForController.ini:
 
 WHAT CHANGED
 ------------
+
+Version 1.0.5
+Adds a Skyrim 1.7.99 / 1.7.104 build. The download is now an installer that asks which Skyrim you have and installs the matching DLL.
+Names the other installer option when the wrong build is installed for the game, instead of asking for an Address Library file that does not exist.
 
 Version 1.0.4
 Holding the Favourite button pockets any item: favourites go to the Favourites Pocket, the rest to the Back Pocket. Before, a hold only took favourites, so nothing could reach the Back Pocket by holding.
