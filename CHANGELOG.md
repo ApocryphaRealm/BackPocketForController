@@ -1,5 +1,5 @@
 # Changelog - Back Pocket For Controller
-## 1.0.6 - 2026-10-11 - untested
+## 1.0.6 - 2026-10-11 - working
 
 ### Added
 - DevBench bpfc.control state now reports footer (the hint-bar button last drawn: menu, input family, text, keyCode, or why none was drawn), holdButton (the control map's Favourite button) and strings (language and file).
