@@ -18,6 +18,7 @@
 
 #include "utils/AddressLibraryGuard.h"
 #include "utils/Logger.h"
+#include "utils/Strings.h"
 
 namespace
 {
@@ -73,6 +74,8 @@ namespace
 					DevBenchTool::Init(true);
 					break;
 				}
+				// 1.0.6: the footer labels' translations (Interface\Translations\BackPocketForController_<language>.txt).
+				strings::Configure("BackPocketForController");
 				auto& s = State();
 				s.configuration = back_pocket::config::load();
 				const bool inventoryReady = back_pocket::inventory_filter::install(s.pocketState, s.configuration);

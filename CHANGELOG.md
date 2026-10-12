@@ -1,4 +1,11 @@
 # Changelog - Back Pocket For Controller
+## 1.0.6 - 2026-10-11 - untested
+
+### Added
+- DevBench bpfc.control state now reports footer (the hint-bar button last drawn: menu, input family, text, keyCode, or why none was drawn), holdButton (the control map's Favourite button) and strings (language and file).
+- The hint bar's Pocket / Unpocket / Unpocket (hold) labels come from Interface\Translations\BackPocketForController_<language>.txt in all eleven languages (rule 66), through the shared utils/Strings.h (AMF's language, else the game's sLanguage). The mod had no translation files before; its notifications are still English.
+- Controller Unpocket prompt in the hint bar. With a gamepad and no controller tap binding (the shipped default: controller_toggle_item_key_code=-1), the footer drew nothing, because it only knew the tap key; the controller's action is the hold on the Favourite button. Now, in the Inventory, an item in a pocket gets 'Unpocket (hold)' on the button the hold rides on (read from the control map, Y = SkyUI key 279 by default), appended the same way as the keyboard's prompt. An item not yet pocketed keeps only the game's Favourite prompt on that button. The capture run of 2026-10-11 found it: 'keyboard hint bar shows B Unpocket, gamepad bar shows no unpocket prompt'.
+
 ## 1.0.5 - 2026-10-02 - untested
 
 ### Added

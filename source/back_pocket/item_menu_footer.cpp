@@ -2,6 +2,8 @@
 
 #include "item_menu_footer.h"
 
+#include <mutex>
+
 namespace back_pocket::item_menu_footer {
 namespace {
 constexpr std::string_view inventory_prototype = "_global.InventoryMenu.prototype";
@@ -69,6 +71,35 @@ state& get_state() {
   return current.keyboard_scan_code;
 }
 
+// What the footer last did, for the DevBench tool (written on the UI thread, read on DevBench's).
+struct last_footer {
+  std::string menu = "none";
+  std::string input = "keyboard-mouse";
+  std::string text;
+  std::uint32_t key_code = 0;
+  std::string outcome = "not drawn yet";
+};
+std::mutex last_footer_lock;
+last_footer last_footer_record;
+
+void note_footer(const menu_kind kind, const input_family input, const std::string_view text,
+                 const std::uint32_t key_code, const std::string_view outcome) {
+  bool changed = false;
+  {
+    std::scoped_lock lock(last_footer_lock);
+    last_footer next{std::string(menu_name(kind)),
+                     input == input_family::gamepad ? "gamepad" : "keyboard-mouse", std::string(text),
+                     key_code, std::string(outcome)};
+    changed = next.menu != last_footer_record.menu || next.input != last_footer_record.input ||
+              next.text != last_footer_record.text || next.outcome != last_footer_record.outcome;
+    last_footer_record = std::move(next);
+  }
+  if (changed) {  // transitions only - updateBottomBar runs on every selection change
+    logger::debug("FOOTER menu={} input={} text=\"{}\" key_code={} ({})", menu_name(kind),
+                  input == input_family::gamepad ? "gamepad" : "keyboard-mouse", text, key_code, outcome);
+  }
+}
+
 [[nodiscard]] bool append_action(RE::GFxFunctionHandler::Params& params, const menu_kind kind) {
   state& current = get_state();
   if (params.movie == nullptr || params.argCount < 1 || params.argsWithThisRef == nullptr ||
@@ -79,12 +110,24 @@ state& get_state() {
   const presentation action =
       current.provider(*params.movie, kind, selected_argument(params.args[0]));
   if (!action.visible) {
+    note_footer(kind, current.input, {}, 0, "no prompt for this row");
     return true;
   }
-  const std::optional<std::uint32_t> key_code = active_key_code(current);
-  if (!key_code.has_value() || action.text.empty()) {
+  std::optional<std::uint32_t> key_code = active_key_code(current);
+  std::string_view text = action.text;
+  // 1.0.6: with a controller and no tap binding (the shipped default), the controller's action is the hold on the
+  // Favourite button - show that prompt where the hold works, in the footer's own style, instead of nothing.
+  if (current.input == input_family::gamepad && !key_code.has_value() && action.hold_key_code.has_value()) {
+    key_code = action.hold_key_code;
+    text = action.hold_text;
+  }
+  if (!key_code.has_value() || text.empty()) {
+    note_footer(kind, current.input, {}, 0,
+                current.input == input_family::gamepad ? "no controller binding for this row"
+                                                       : "no keyboard binding");
     return true;
   }
+  const std::string label_text(text);  // CreateString needs a terminated string; a string_view is not one
 
   RE::GFxValue nav_panel;
   if (!params.argsWithThisRef[0].GetMember("navPanel", &nav_panel) || !nav_panel.IsObject()) {
@@ -96,7 +139,7 @@ state& get_state() {
   RE::GFxValue label;
   params.movie->CreateObject(&controls);
   params.movie->CreateObject(&button_data);
-  params.movie->CreateString(&label, action.text.data());
+  params.movie->CreateString(&label, label_text.c_str());
   if (!controls.SetMember("keyCode", RE::GFxValue(static_cast<double>(*key_code))) ||
       !button_data.SetMember("text", label) || !button_data.SetMember("controls", controls)) {
     return false;
@@ -108,7 +151,9 @@ state& get_state() {
   }
 
   const RE::GFxValue instant(true);
-  return nav_panel.Invoke("updateButtons", nullptr, &instant, 1);
+  const bool updated = nav_panel.Invoke("updateButtons", nullptr, &instant, 1);
+  note_footer(kind, current.input, label_text, *key_code, updated ? "appended" : "appended, updateButtons failed");
+  return updated;
 }
 
 [[nodiscard]] bool add_footer_capacity(RE::GFxMovieView& view, const menu_kind kind) {
@@ -345,5 +390,19 @@ bool refresh(RE::GFxMovieView& view, const bool footer_selected) {
     logger::warn("Back Pocket footer could not request a menu refresh");
   }
   return false;
+}
+
+std::string last_footer_json() {
+  std::scoped_lock lock(last_footer_lock);
+  std::string text;
+  for (const char c : last_footer_record.text) {  // labels are plain words; escape the two JSON specials anyway
+    if (c == '"' || c == '\\') {
+      text += '\\';
+    }
+    text += c;
+  }
+  return std::format(R"({{"menu":"{}","input":"{}","text":"{}","keyCode":{},"outcome":"{}"}})",
+                     last_footer_record.menu, last_footer_record.input, text, last_footer_record.key_code,
+                     last_footer_record.outcome);
 }
 } // namespace back_pocket::item_menu_footer

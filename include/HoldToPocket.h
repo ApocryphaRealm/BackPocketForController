@@ -44,6 +44,11 @@ namespace HoldToPocket
 	};
 	Snapshot GetSnapshot();
 
+	// The button the hold rides on, as the control map reports it now (the item menus' Favourite button; Y = 0x8000 when
+	// it is not bound on the controller). Lock-free - it only reads the control map - so the footer can ask from the UI
+	// thread while the input filter holds its lock (1.0.6: the controller hint bar's Unpocket prompt).
+	std::uint32_t HoldButtonCode();
+
 	// DevBench driving (rule 64): queue a Y press as if from the pad, held for a_frames dispatches
 	// (60 a second), so it goes through this patch's own filter exactly like a hardware press.
 	void QueueTestPress(int a_frames);

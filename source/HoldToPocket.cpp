@@ -401,6 +401,11 @@ namespace HoldToPocket
 					   upstream ? "BackPocket.dll (the original) is also installed - this mod replaces it; disable the original" : "the original BackPocket.dll is not loaded");
 	}
 
+	std::uint32_t HoldButtonCode()
+	{
+		return HoldButton();
+	}
+
 	Snapshot GetSnapshot()
 	{
 		std::scoped_lock l(g_lock);

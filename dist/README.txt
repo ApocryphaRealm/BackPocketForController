@@ -1,6 +1,6 @@
 ﻿Back Pocket For Controller
 ==========================
-Version 1.0.4
+Version 1.0.6
 
 Keeps the items you never sell or drop out of the way. A Back Pocket category in SkyUI's item menus
 holds them, and the regular categories stop listing them. They stay in your inventory.
@@ -10,7 +10,8 @@ INI for one Back Pocket holding everything.
 
 CONTROLLER: in the Inventory, HOLD the Favourite button (Y) on an item to send it to a pocket -
 favourites to the Favourites Pocket, everything else to the Back Pocket - or on a pocketed item to
-take it out. A quick press is still the Favourite button. The hold follows the Favourite button: move
+take it out - the hint bar shows Unpocket (hold) on that button for a pocketed item. A quick press
+is still the Favourite button. The hold follows the Favourite button: move
 Favourite to another button (Unbind Vanilla Controls lets you) and the hold moves with it. Set
 bRequireFavourite=true in the INI and a hold only pockets favourites.
 The Back Pocket does not appear in the trading menu: it holds what you do not mean to trade, so
@@ -42,6 +43,10 @@ SKSE\Plugins\BackPocketForController.ini:
 
 WHAT CHANGED
 ------------
+
+Version 1.0.6
+With a controller, the hint bar shows Unpocket (hold) on the Favourite button for an item in a pocket, in the Inventory - before, only the keyboard's prompt existed.
+The hint bar's Pocket and Unpocket prompts are translated into Japanese, Korean, Chinese, Russian, German, French, Spanish, Italian, Polish and Czech.
 
 Version 1.0.5
 Adds a Skyrim 1.7.99 / 1.7.104 build. The download is now an installer that asks which Skyrim you have and installs the matching DLL.

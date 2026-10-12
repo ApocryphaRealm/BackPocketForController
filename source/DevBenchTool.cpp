@@ -7,6 +7,8 @@
 #include "SelfCheck.h"
 #include "Settings.h"
 #include "utils/Logger.h"
+#include "utils/Strings.h"
+#include "back_pocket/item_menu_footer.h"
 
 #include <cmath>
 #include <format>
@@ -59,12 +61,14 @@ namespace DevBenchTool
 				"\"originalBackPocketAlsoLoaded\":{},"
 				"\"runtime\":{{\"hookInstalled\":{},\"armed\":{},\"holdsTimed\":{},\"sentIn\":{},\"takenOut\":{},\"tapsGivenBack\":{},"
 				"\"passedNotEligible\":{},\"passedNotInventory\":{},\"passedFrameworkOpen\":{},"
-				"\"lastDecision\":\"{}\",\"lastItem\":\"{}\"}}}}",
+				"\"lastDecision\":\"{}\",\"lastItem\":\"{}\"}},"
+				"\"footer\":{},\"holdButton\":{},\"strings\":{}}}",
 				settings::general::holdSeconds, settings::debug::logLevel, EscapeJson(settings::GetIniPath()),
 				s.upstreamLoaded,
 				s.hookInstalled, s.armed, s.armedCount, s.sentIn, s.takenOut, s.tapsGivenBack,
 				s.passedNotEligible, s.passedNotInventory, s.passedFrameworkOpen,
-				EscapeJson(s.lastDecision), EscapeJson(s.lastItem));
+				EscapeJson(s.lastDecision), EscapeJson(s.lastItem),
+				back_pocket::item_menu_footer::last_footer_json(), HoldToPocket::HoldButtonCode(), strings::StatusJson());
 			a_write(a_sink, json.c_str());
 		}
 	}
@@ -93,7 +97,7 @@ namespace DevBenchTool
 			"{"
 			"\"description\":\"Back Pocket for Controller live state: whether the original Back Pocket DLL is also loaded, "
 			"the hold time, and what the last Y press did. op=tap queues a short Y press, op=hold a Y press held past "
-			"the hold time (both go through the mod's own filter like a pad press).\","
+			"the hold time (both go through the mod's own filter like a pad press). footer is the hint-bar button last drawn.\","
 			"\"inputSchema\":{\"type\":\"object\",\"properties\":{\"op\":{\"type\":\"string\"}}},"
 			"\"readOnly\":false"
 			"}";

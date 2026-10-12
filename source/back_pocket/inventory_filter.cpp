@@ -9,6 +9,8 @@
 #include "back_pocket/tab_transition_policy.h"
 #include "item_menu_footer.h"
 #include "Settings.h"   // bSeparateFavourites (Back Pocket for Controller)
+#include "HoldToPocket.h"   // the hold's button, for the controller's Unpocket prompt (1.0.6)
+#include "utils/Strings.h"  // the footer labels in eleven languages (1.0.6)
 
 namespace back_pocket::inventory_filter {
 namespace {
@@ -1286,10 +1288,23 @@ footer_presentation(RE::GFxMovie& movie, const item_menu_footer::menu_kind menu,
   }
 
   const bool pocketed = current.pocket_state->contains(*target);
-  return {
+  // 1.0.6: the labels come from Interface\Translations\BackPocketForController_<language>.txt (rule 66). Tick() reloads
+  // only when the language changed; this runs on the UI thread, the only one that loads, and append_action copies the
+  // text before anything else can.
+  strings::Tick();
+  item_menu_footer::presentation result{
       .visible = true,
-      .text = pocketed ? std::string_view{"Unpocket"} : std::string_view{"Pocket"},
+      .text = pocketed ? std::string_view{strings::TR("BPC_Unpocket", "Unpocket")}
+                       : std::string_view{strings::TR("BPC_Pocket", "Pocket")},
   };
+  // The controller's action is the hold on the Favourite button, and the hold works in the Inventory only
+  // (HoldToPocket). Taking out is the half with no other prompt: the Favourite prompt already sits on that button for an
+  // item not yet pocketed. The owner's capture run, 2026-10-11: "gamepad bar shows no unpocket prompt".
+  if (pocketed && menu == item_menu_footer::menu_kind::inventory) {
+    result.hold_key_code = input_binding::gamepad_key_code_of(HoldToPocket::HoldButtonCode());
+    result.hold_text = strings::TR("BPC_UnpocketHold", "Unpocket (hold)");
+  }
+  return result;
 }
 
 void refresh_footer_now() {

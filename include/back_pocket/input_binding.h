@@ -68,6 +68,19 @@ gamepad_button(const gamepad_key_code key_code) noexcept {
   }
 }
 
+// Back Pocket for Controller 1.0.6: the inverse of gamepad_button - the SkyUI key code (266-281) a footer button needs
+// for a button the control map reports as an XInput mask (the hold rides on the Favourite button, 0x8000 = Y = 279).
+[[nodiscard]] constexpr std::optional<gamepad_key_code>
+gamepad_key_code_of(const gamepad_button_id button) noexcept {
+  for (gamepad_key_code code = minimum_gamepad_key_code; code <= maximum_gamepad_key_code; ++code) {
+    if (gamepad_button(code) == button) {
+      return code;
+    }
+  }
+  return std::nullopt;
+}
+static_assert(gamepad_key_code_of(0x8000) == 279u);
+
 [[nodiscard]] controller_result observe_controller(controller_press& state,
                                                    gamepad_button_id trigger,
                                                    gamepad_button_id observed, button_phase phase,
